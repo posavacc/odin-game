@@ -23,7 +23,7 @@ main :: proc() {
 	player: Player = Player{10.0, {{0, 0}, {0, 0}, {0, 0}, Shape.Rectangle}}
 	
 	for !rl.WindowShouldClose() {
-		dir := input_dir(&player)
+		dir := input_dir()
 
 		dt := rl.GetFrameTime()
 
@@ -43,7 +43,7 @@ main :: proc() {
 	}
 }
 
-input_dir :: proc(player: ^Player) -> Vec2 {
+input_dir :: proc() -> Vec2 {
 	dir: Vec2 = {0, 0}
 	if rl.IsKeyDown(.S) do dir += {0, -1}
 	if rl.IsKeyReleased(.S) do dir -= {0, -1}
