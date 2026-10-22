@@ -1,21 +1,11 @@
-package game
+package main
 
+import "core:fmt"
 import rl "vendor:raylib"
-
 Vec2 :: rl.Vector2
 
-WIDTH :: 1920
-HEIGHT :: 1080
-
-Player :: struct {
-	health: f32,
-	pos: Vec2,
-	vel: Vec2
-}
-
-player_move :: proc(player: ^Player, dt: f32) {
-	player.pos += player.vel * dt
-}
+WIDTH ::  600
+HEIGHT :: 400
 
 main :: proc() {
 	rl.InitWindow(WIDTH, HEIGHT, "game")
@@ -30,17 +20,46 @@ main :: proc() {
 		zoom = 1
 	}
 
-	player: Player = Player{health = 10.0, pos = Vec2{0.0, 0.0}, vel = Vec2{100.0, 0.0}}
+	player: Player = Player{10.0, {{0, 0}, {0, 0}, {0, 0}, Shape.Rectangle}}
 	
 	for !rl.WindowShouldClose() {
-		player_move(&player, rl.GetFrameTime())
+		dir := input_dir(&player)
+
+		dt := rl.GetFrameTime()
+
+		player_move(&player, dir)
+		integrate(&player.body, dt)
+
+		fmt.printfln("speed: {}\naccel: {}", rl.Vector2Length(player.body.vel), rl.Vector2Length(player.body.accel))
 
 		rl.BeginDrawing()
-		rl.ClearBackground(rl.GRAY)
+		rl.ClearBackground({45, 45, 45, 255})
 
 		rl.BeginMode2D(cam)
-		rl.DrawCircleV(player.pos, 5.0, rl.BLUE)
+		rl.DrawRectangleV({-500, 0}, {1000, 100}, rl.GRAY)
+		rl.DrawCircleV(to_screen(player.body.pos), 10.0, rl.BLUE)
 
 		rl.EndDrawing()
 	}
+}
+
+input_dir :: proc(player: ^Player) -> Vec2 {
+	dir: Vec2 = {0, 0}
+	if rl.IsKeyDown(.S) do dir += {0, -1}
+	if rl.IsKeyReleased(.S) do dir -= {0, -1}
+
+	if rl.IsKeyDown(.W) do dir += {0, 1}
+	if rl.IsKeyReleased(.W) do dir -= {0, 1}
+
+	if rl.IsKeyDown(.A) do dir += {-1, 0}
+	if rl.IsKeyReleased(.A) do dir -= {-1, 0}
+
+	if rl.IsKeyDown(.D) do dir += {1, 0}
+	if rl.IsKeyReleased(.D) do dir -= {1, 0}
+
+	return rl.Vector2Normalize(dir)
+}
+
+to_screen :: proc(v: Vec2) -> Vec2 {
+	return {v.x, -v.y}
 }
