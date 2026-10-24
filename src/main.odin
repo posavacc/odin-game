@@ -4,8 +4,8 @@ import "core:fmt"
 import rl "vendor:raylib"
 Vec2 :: rl.Vector2
 
-WIDTH ::  600
-HEIGHT :: 400
+WIDTH ::  800
+HEIGHT :: 600
 
 main :: proc() {
 	rl.InitWindow(WIDTH, HEIGHT, "game")
@@ -17,27 +17,45 @@ main :: proc() {
 		offset = {WIDTH / 2, HEIGHT / 2},
 		target = {0, 0},
 		rotation = 0,
-		zoom = 1
+		zoom = 20
 	}
 
-	player: Player = Player{10.0, {{0, 0}, {0, 0}, {0, 0}, Shape.Rectangle}}
+	player: Player = Player {{{0, 0}, {0, 0}, {0.6, 1.8}}}
+	p2: Player = Player {{{0, 0}, {0, 0}, {0.5, 0.5}}}
+	floor: Body = Body {{0, -5}, {0, 0}, {20, 2}}
+
+	bodies := [?]^Body{&floor, &player.body, &p2.body}
 	
 	for !rl.WindowShouldClose() {
 		dir := input_dir()
-
 		dt := rl.GetFrameTime()
 
-		player_move(&player, dir)
-		integrate(&player.body, dt)
+		mouse_pos := rl.GetScreenToWorld2D(rl.GetMousePosition(), cam)
+		p2.body.pos = {mouse_pos.x, -mouse_pos.y}
 
-		fmt.printfln("speed: {}\naccel: {}", rl.Vector2Length(player.body.vel), rl.Vector2Length(player.body.accel))
+		// integrate(&player.body, dt)
 
 		rl.BeginDrawing()
 		rl.ClearBackground({45, 45, 45, 255})
 
 		rl.BeginMode2D(cam)
-		rl.DrawRectangleV({-500, 0}, {1000, 100}, rl.GRAY)
-		rl.DrawCircleV(to_screen(player.body.pos), 10.0, rl.BLUE)
+
+		for i := 0; i < len(bodies); i += 1 {
+			collided := false
+			overlap: f32
+			side: Side
+			a := bodies[i]
+			for j := i + 1; j < len(bodies); j += 1 {
+				b := bodies[j]
+				overlap, side, collided = check_collision(a, b)
+			}
+			if collided {
+				rl.DrawRectangleV(rectangle_pos_at_center(a.pos, a.size), a.size, rl.RED)
+				fmt.printfln("overlap: {}\nside: {}\n", overlap, side)
+			} else {
+				rl.DrawRectangleV(rectangle_pos_at_center(a.pos, a.size), a.size, rl.WHITE)
+			}
+		}
 
 		rl.EndDrawing()
 	}
@@ -62,4 +80,8 @@ input_dir :: proc() -> Vec2 {
 
 to_screen :: proc(v: Vec2) -> Vec2 {
 	return {v.x, -v.y}
+}
+
+rectangle_pos_at_center :: proc(pos: Vec2, size: Vec2) -> Vec2 {
+	return to_screen({pos.x - size.x / 2, pos.y + size.y / 2})
 }
