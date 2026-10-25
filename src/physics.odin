@@ -1,5 +1,6 @@
 package main
 
+import "core:math"
 import rl "vendor:raylib"
 
 GRAVITY_ACCEL :: -9.81
@@ -28,14 +29,19 @@ check_collision :: proc(a: ^Body, b: ^Body) -> (overlap: f32, side: Side, collid
 	le_b := b.pos.x - b.size.x / 2; re_b := le_b + b.size.x
 	te_b := b.pos.y + b.size.y / 2; be_b := te_b - b.size.y
 
-	a_is_right := le_a > re_b; a_is_left := re_a < le_b
-	a_is_top := be_a > te_b; a_is_bottom := te_a < be_b
+	overlap_x := math.min(re_a, re_b) - math.max(le_a, le_b)
+	overlap_y := math.min(te_a, te_b) - math.max(be_a, be_b)
 
-	if a_is_right || a_is_bottom || a_is_left || a_is_top do return 0, .None, false
-
-	switch {
-		case a_is_right
+	if overlap_x > 0 && overlap_y > 0 {
+		min_overlap := overlap_x if overlap_x < overlap_y else overlap_y
+		side: Side
+		if min_overlap == overlap_x {
+			side = .Right if a.pos.x < b.pos.x else .Left
+		} else {
+			side = .Top if a.pos.y < b.pos.y else .Bottom
+		}
+		return min_overlap, side, true
 	}
 
-	return 0, .Left, true
+	return 0, .None, false
 }

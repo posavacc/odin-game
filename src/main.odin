@@ -51,7 +51,7 @@ main :: proc() {
 			}
 			if collided {
 				rl.DrawRectangleV(rectangle_pos_at_center(a.pos, a.size), a.size, rl.RED)
-				fmt.printfln("overlap: {}\nside: {}\n", overlap, side)
+				fmt.printfln("overlap: {},\nside: {}\n", overlap, side)
 			} else {
 				rl.DrawRectangleV(rectangle_pos_at_center(a.pos, a.size), a.size, rl.WHITE)
 			}
