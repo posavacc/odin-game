@@ -20,10 +20,10 @@ main :: proc() {
 		zoom = 20
 	}
 
-	player: Player = Player {{{0, 0}, {0, 0}, {0.6, 1.8,}, true}}
-	p2: Player = Player {{{0, 5}, {0, 0}, {0.8, 0.8,}, true}}
-	p3: Player = Player {{{5, 3}, {-5, 0}, {0.8, 0.8,}, true}}
-	floor: Body = Body {{0, -5}, {0, 0}, {20, 2}, false}
+	player: Player = Player {body_make({0.6, 1.8}, {0, 0}, mass = 10)}
+	p2: Player = Player {body_make({0.8, 0.8}, {0, 5}, mass = 10)}
+	p3: Player = Player {body_make({0.8, 0.8}, {5, 3}, vel = {-5, 0}, mass = 10)}
+	floor: Body = body_make({20, 2}, {0, -5})
 
 	bodies := [?]^Body{&p3.body, &p2.body, &player.body, &floor}
 	
@@ -32,7 +32,7 @@ main :: proc() {
 		dt := rl.GetFrameTime()
 
 		for body in bodies {
-			if body.is_dynamic do integrate(body, dt)
+			if body.inv_mass > 0 do integrate(body, dt)
 		}
 
 		for i := 0; i < len(bodies); i += 1 {
@@ -40,7 +40,6 @@ main :: proc() {
 				handle_collisions(bodies[i], bodies[j])
 			}
 		}
-
 
 		rl.BeginDrawing()
 		rl.ClearBackground({45, 45, 45, 255})

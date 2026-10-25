@@ -1,5 +1,6 @@
 package main
 
+import "core:math/linalg"
 import "core:math"
 import rl "vendor:raylib"
 
@@ -8,10 +9,21 @@ GRAVITY_ACCEL :: -9.81
 Side :: enum { None, Left, Right, Top, Bottom }
 
 Body :: struct {
+	size: Vec2,
 	pos: Vec2,
 	vel: Vec2,
-	size: Vec2,
-	is_dynamic: bool,
+	restitution: f32,
+	inv_mass: f32,
+}
+
+body_make :: proc(size, pos: Vec2, vel: Vec2 = {0, 0}, restitution: f32 = 0.7, mass: f32 = 0) -> Body {
+	return Body {
+		size        = size,
+		pos         = pos,
+		vel         = vel,
+		restitution = restitution,
+		inv_mass    = 1 / mass if mass > 0 else 0
+	}
 }
 
 integrate :: proc(body: ^Body, dt: f32) {
@@ -19,12 +31,12 @@ integrate :: proc(body: ^Body, dt: f32) {
 	body.pos += body.vel * dt
 }
 
-handle_collisions :: proc(a: ^Body, b: ^Body) {
+handle_collisions :: proc(a, b: ^Body) {
 	overlap, side, collided := check_collision(a, b)
 	if collided do resolve_collision(a, b, overlap, side)
 }
 
-check_collision :: proc(a: ^Body, b: ^Body) -> (overlap: f32, side: Side, collided: bool) {
+check_collision :: proc(a, b: ^Body) -> (overlap: f32, side: Side, collided: bool) {
 	// get the position of every edge of each body
 	// compare their relative positions and conclude if they're intersecting each other
 	// return if collided and collision information (overlap and side)
@@ -52,66 +64,90 @@ check_collision :: proc(a: ^Body, b: ^Body) -> (overlap: f32, side: Side, collid
 	return 0, .None, false
 }
 
-resolve_collision :: proc(a: ^Body, b: ^Body, overlap: f32, side: Side) {
-	switch {
-	case a.is_dynamic && !b.is_dynamic:
-		dir: Vec2
-		#partial switch side {
-		case .Left:
-			dir = {-1, 0}
-			a.vel.x = -a.vel.x
-		case .Right:
-			dir = {1, 0}
-			a.vel.x = -a.vel.x
-		case .Top:
-			dir = {0, 1}
-			a.vel.y = -a.vel.y
-		case .Bottom:
-			dir = {0, -1}
-			a.vel.y = -a.vel.y
-		}
+// bad_collision :: proc(a, b: ^Body, overlap: f32, side: Side) {
+// 	switch {
+// 	case a.is_dynamic && !b.is_dynamic:
+// 		dir: Vec2
+// 		#partial switch side {
+// 		case .Left:
+// 			dir = {-1, 0}
+// 			a.vel.x = -a.vel.x
+// 		case .Right:
+// 			dir = {1, 0}
+// 			a.vel.x = -a.vel.x
+// 		case .Top:
+// 			dir = {0, 1}
+// 			a.vel.y = -a.vel.y
+// 		case .Bottom:
+// 			dir = {0, -1}
+// 			a.vel.y = -a.vel.y
+// 		}
+//
+// 		a.pos += dir * overlap
+// 	case !a.is_dynamic && b.is_dynamic:
+// 		dir: Vec2
+// 		#partial switch side {
+// 		case .Left:
+// 			dir = {-1, 0}
+// 			b.vel.x = -b.vel.x
+// 		case .Right:
+// 			dir = {1, 0}
+// 			b.vel.x = -b.vel.x
+// 		case .Top:
+// 			dir = {0, 1}
+// 			b.vel.y = -b.vel.y
+// 		case .Bottom:
+// 			dir = {0, -1}
+// 			b.vel.y = -b.vel.y
+// 		}
+//
+// 		b.pos -= dir * overlap
+// 	case a.is_dynamic && b.is_dynamic:
+// 		dir: Vec2
+// 		#partial switch side {
+// 		case .Left:
+// 			dir = {-1, 0}
+// 			b.vel.x = -b.vel.x
+// 			a.vel.x = -a.vel.x
+// 		case .Right:
+// 			dir = {1, 0}
+// 			b.vel.x = -b.vel.x
+// 			a.vel.x = -a.vel.x
+// 		case .Top:
+// 			dir = {0, 1}
+// 			b.vel.y = -b.vel.y
+// 			a.vel.y = -a.vel.y
+// 		case .Bottom:
+// 			dir = {0, -1}
+// 			b.vel.y = -b.vel.y
+// 			a.vel.y = -a.vel.y
+// 		}
+//
+// 		a.pos += dir * overlap * 0.5
+// 		b.pos -= dir * overlap * 0.5
+// 	}
+// }
 
-		a.pos += dir * overlap
-	case !a.is_dynamic && b.is_dynamic:
-		dir: Vec2
-		#partial switch side {
-		case .Left:
-			dir = {-1, 0}
-			b.vel.x = -b.vel.x
-		case .Right:
-			dir = {1, 0}
-			b.vel.x = -b.vel.x
-		case .Top:
-			dir = {0, 1}
-			b.vel.y = -b.vel.y
-		case .Bottom:
-			dir = {0, -1}
-			b.vel.y = -b.vel.y
-		}
+resolve_collision :: proc(a, b: ^Body, overlap: f32, side: Side) {
+	// normal is a <- b
+	n := side_to_dir(side)
+	vn := linalg.dot(a.vel - b.vel, n)
+	e := math.max(a.restitution, b.restitution)
 
-		b.pos -= dir * overlap
-	case a.is_dynamic && b.is_dynamic:
-		dir: Vec2
-		#partial switch side {
-		case .Left:
-			dir = {-1, 0}
-			b.vel.x = -b.vel.x
-			a.vel.x = -a.vel.x
-		case .Right:
-			dir = {1, 0}
-			b.vel.x = -b.vel.x
-			a.vel.x = -a.vel.x
-		case .Top:
-			dir = {0, 1}
-			b.vel.y = -b.vel.y
-			a.vel.y = -a.vel.y
-		case .Bottom:
-			dir = {0, -1}
-			b.vel.y = -b.vel.y
-			a.vel.y = -a.vel.y
-		}
+	j := -(1 + e) * vn / (a.inv_mass + b.inv_mass)
+	impulse := j * n
 
-		a.pos += dir * overlap * 0.5
-		b.pos -= dir * overlap * 0.5
+	a.vel += impulse * a.inv_mass
+	b.vel -= impulse * b.inv_mass
+}
+
+side_to_dir :: proc(side: Side) -> Vec2 {
+	switch side {
+	case .None: return {0, 0}
+	case .Left: return {-1, 0}
+	case .Right: return {1, 0}
+	case .Top: return {0, 1}
+	case .Bottom: return {0, -1}
 	}
+	unreachable()
 }
