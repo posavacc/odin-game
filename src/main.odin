@@ -20,41 +20,35 @@ main :: proc() {
 		zoom = 20
 	}
 
-	player: Player = Player {{{0, 0}, {0, 0}, {0.6, 1.8}}}
-	p2: Player = Player {{{0, 0}, {0, 0}, {0.5, 0.5}}}
-	floor: Body = Body {{0, -5}, {0, 0}, {20, 2}}
+	player: Player = Player {{{0, 0}, {0, 0}, {0.6, 1.8,}, true}}
+	p2: Player = Player {{{0, 5}, {0, 0}, {0.8, 0.8,}, true}}
+	p3: Player = Player {{{5, 3}, {-5, 0}, {0.8, 0.8,}, true}}
+	floor: Body = Body {{0, -5}, {0, 0}, {20, 2}, false}
 
-	bodies := [?]^Body{&floor, &player.body, &p2.body}
+	bodies := [?]^Body{&p3.body, &p2.body, &player.body, &floor}
 	
 	for !rl.WindowShouldClose() {
 		dir := input_dir()
 		dt := rl.GetFrameTime()
 
-		mouse_pos := rl.GetScreenToWorld2D(rl.GetMousePosition(), cam)
-		p2.body.pos = {mouse_pos.x, -mouse_pos.y}
+		for body in bodies {
+			if body.is_dynamic do integrate(body, dt)
+		}
 
-		// integrate(&player.body, dt)
+		for i := 0; i < len(bodies); i += 1 {
+			for j := i + 1; j < len(bodies); j += 1 {
+				handle_collisions(bodies[i], bodies[j])
+			}
+		}
+
 
 		rl.BeginDrawing()
 		rl.ClearBackground({45, 45, 45, 255})
 
 		rl.BeginMode2D(cam)
 
-		for i := 0; i < len(bodies); i += 1 {
-			collided := false
-			overlap: f32
-			side: Side
-			a := bodies[i]
-			for j := i + 1; j < len(bodies); j += 1 {
-				b := bodies[j]
-				overlap, side, collided = check_collision(a, b)
-			}
-			if collided {
-				rl.DrawRectangleV(rectangle_pos_at_center(a.pos, a.size), a.size, rl.RED)
-				fmt.printfln("overlap: {},\nside: {}\n", overlap, side)
-			} else {
-				rl.DrawRectangleV(rectangle_pos_at_center(a.pos, a.size), a.size, rl.WHITE)
-			}
+		for body in bodies {
+			rl.DrawRectangleV(rectangle_pos_at_center(body.pos, body.size), body.size, rl.WHITE)
 		}
 
 		rl.EndDrawing()
