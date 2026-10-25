@@ -19,18 +19,17 @@ main :: proc() {
 		zoom = 20
 	}
 
-	p1: Player = Player {body_make({0.8, 0.8}, {0, -3.6}, mass = 10.1)}
-	p2: Player = Player {body_make({0.8, 0.8}, {5, -3.6}, vel = {-4, 0}, mass = 10)}
-	floor: Body = body_make({20, 2}, {0, -5})
+	player: Player = Player {body_make({0.8, 1.8}, {0, 0.9})}
+	floor: Body = body_make({20, 2}, {0, -1}, is_dynamic = false)
 
-	bodies := [?]^Body{&p2.body, &p1.body, &floor}
+	bodies := [?]^Body{&player.body, &floor}
 	
 	for !rl.WindowShouldClose() {
 		dir := input_dir()
 		dt := rl.GetFrameTime()
 
 		for body in bodies {
-			if body.inv_mass > 0 do integrate(body, dt)
+			if body.is_dynamic do integrate(body, dt)
 		}
 
 		for i := 0; i < len(bodies); i += 1 {
