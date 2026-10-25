@@ -16,7 +16,7 @@ Body :: struct {
 	inv_mass: f32,
 }
 
-body_make :: proc(size, pos: Vec2, vel: Vec2 = {0, 0}, restitution: f32 = 0.7, mass: f32 = 0) -> Body {
+body_make :: proc(size, pos: Vec2, vel: Vec2 = {0, 0}, restitution: f32 = 1.0, mass: f32 = 0) -> Body {
 	return Body {
 		size        = size,
 		pos         = pos,
@@ -37,18 +37,8 @@ handle_collisions :: proc(a, b: ^Body) {
 }
 
 check_collision :: proc(a, b: ^Body) -> (overlap: f32, side: Side, collided: bool) {
-	// get the position of every edge of each body
-	// compare their relative positions and conclude if they're intersecting each other
-	// return if collided and collision information (overlap and side)
-
-	le_a := a.pos.x - a.size.x / 2; re_a := le_a + a.size.x
-	te_a := a.pos.y + a.size.y / 2; be_a := te_a - a.size.y
-
-	le_b := b.pos.x - b.size.x / 2; re_b := le_b + b.size.x
-	te_b := b.pos.y + b.size.y / 2; be_b := te_b - b.size.y
-
-	overlap_x := math.min(re_a, re_b) - math.max(le_a, le_b)
-	overlap_y := math.min(te_a, te_b) - math.max(be_a, be_b)
+	overlap_x := (a.size.x + b.size.x) / 2 - math.abs(a.pos.x - b.pos.x)
+	overlap_y := (a.size.y + b.size.y) / 2 - math.abs(a.pos.y - b.pos.y)
 
 	if overlap_x > 0 && overlap_y > 0 {
 		min_overlap := overlap_x if overlap_x < overlap_y else overlap_y
@@ -68,10 +58,16 @@ resolve_collision :: proc(a, b: ^Body, overlap: f32, side: Side) {
 	// normal is a <- b
 	n := side_to_dir(side)
 	vn := linalg.dot(a.vel - b.vel, n)
+	if vn > 0 do return
+
 	e := math.max(a.restitution, b.restitution)
 
 	j := -(1 + e) * vn / (a.inv_mass + b.inv_mass)
 	impulse := j * n
+
+	mass_ratio := a.inv_mass / (a.inv_mass + b.inv_mass)
+	a.pos += n * overlap * mass_ratio
+	b.pos -= n * overlap * (1 - mass_ratio)
 
 	a.vel += impulse * a.inv_mass
 	b.vel -= impulse * b.inv_mass

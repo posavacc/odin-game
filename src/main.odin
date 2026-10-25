@@ -1,16 +1,15 @@
 package main
 
-import "core:fmt"
 import rl "vendor:raylib"
 Vec2 :: rl.Vector2
 
-WIDTH ::  800
+WIDTH  :: 800
 HEIGHT :: 600
 
 main :: proc() {
 	rl.InitWindow(WIDTH, HEIGHT, "game")
 	defer rl.CloseWindow()
-	rl.SetTargetFPS(180)
+	rl.SetTargetFPS(60)
 	if WIDTH == 1920 && HEIGHT == 1080 do rl.ToggleFullscreen()
 
 	cam: rl.Camera2D = {
@@ -20,9 +19,9 @@ main :: proc() {
 		zoom = 20
 	}
 
-	player: Player = Player {body_make({0.6, 1.8}, {0, 0}, mass = 10)}
-	p2: Player = Player {body_make({0.8, 0.8}, {0, 5}, mass = 10)}
-	p3: Player = Player {body_make({0.8, 0.8}, {5, 3}, vel = {-5, 0}, mass = 10)}
+	player: Player = Player {body_make({0.6, 1.8}, {0, 0}, mass = 8000)}
+	p2: Player = Player {body_make({0.8, 0.8}, {0, 5}, mass = 5)}
+	p3: Player = Player {body_make({0.8, 0.8}, {5, 3}, vel = {-5, 0}, mass = 1000)}
 	floor: Body = body_make({20, 2}, {0, -5})
 
 	bodies := [?]^Body{&p3.body, &p2.body, &player.body, &floor}
