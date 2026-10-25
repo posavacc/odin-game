@@ -4,7 +4,7 @@ import "core:math/linalg"
 import "core:math"
 import rl "vendor:raylib"
 
-GRAVITY_ACCEL :: -9.81
+GRAVITY_ACCEL :: -30
 
 Side :: enum { None, Left, Right, Top, Bottom }
 

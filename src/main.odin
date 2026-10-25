@@ -25,8 +25,10 @@ main :: proc() {
 	bodies := [?]^Body{&player.body, &floor}
 	
 	for !rl.WindowShouldClose() {
-		dir := input_dir()
+		input_dir := input_dir()
 		dt := rl.GetFrameTime()
+
+		move_player(&player.body, input_dir, dt)
 
 		for body in bodies {
 			if body.is_dynamic do integrate(body, dt)
@@ -53,11 +55,8 @@ main :: proc() {
 
 input_dir :: proc() -> Vec2 {
 	dir: Vec2 = {0, 0}
-	if rl.IsKeyDown(.S) do dir += {0, -1}
-	if rl.IsKeyReleased(.S) do dir -= {0, -1}
-
-	if rl.IsKeyDown(.W) do dir += {0, 1}
-	if rl.IsKeyReleased(.W) do dir -= {0, 1}
+	if rl.IsKeyPressed(.W) || rl.IsKeyPressed(.SPACE) do dir += {0, 1}
+	if rl.IsKeyReleased(.W) || rl.IsKeyReleased(.SPACE) do dir -= {0, 1}
 
 	if rl.IsKeyDown(.A) do dir += {-1, 0}
 	if rl.IsKeyReleased(.A) do dir -= {-1, 0}
@@ -65,7 +64,7 @@ input_dir :: proc() -> Vec2 {
 	if rl.IsKeyDown(.D) do dir += {1, 0}
 	if rl.IsKeyReleased(.D) do dir -= {1, 0}
 
-	return rl.Vector2Normalize(dir)
+	return dir
 }
 
 to_screen :: proc(v: Vec2) -> Vec2 {
