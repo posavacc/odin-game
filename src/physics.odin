@@ -65,7 +65,10 @@ resolve_collision :: proc(a, b: ^Body, overlap: f32, side: Side) {
 	j := -(1 + e) * vn / (a.inv_mass + b.inv_mass)
 	impulse := j * n
 
-	mass_ratio := a.inv_mass / (a.inv_mass + b.inv_mass)
+	total_inv_mass := a.inv_mass + b.inv_mass
+	if total_inv_mass == 0 do return
+
+	mass_ratio := a.inv_mass / (total_inv_mass)
 	a.pos += n * overlap * mass_ratio
 	b.pos -= n * overlap * (1 - mass_ratio)
 

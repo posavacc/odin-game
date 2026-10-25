@@ -19,12 +19,11 @@ main :: proc() {
 		zoom = 20
 	}
 
-	player: Player = Player {body_make({0.6, 1.8}, {0, 0}, mass = 8000)}
-	p2: Player = Player {body_make({0.8, 0.8}, {0, 5}, mass = 5)}
-	p3: Player = Player {body_make({0.8, 0.8}, {5, 3}, vel = {-5, 0}, mass = 1000)}
+	p1: Player = Player {body_make({0.8, 0.8}, {0, -3.6}, mass = 10.1)}
+	p2: Player = Player {body_make({0.8, 0.8}, {5, -3.6}, vel = {-4, 0}, mass = 10)}
 	floor: Body = body_make({20, 2}, {0, -5})
 
-	bodies := [?]^Body{&p3.body, &p2.body, &player.body, &floor}
+	bodies := [?]^Body{&p2.body, &p1.body, &floor}
 	
 	for !rl.WindowShouldClose() {
 		dir := input_dir()
